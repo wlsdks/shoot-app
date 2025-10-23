@@ -9,9 +9,10 @@ Shoot App은 Kotlin Multiplatform과 Compose Multiplatform을 사용하여 Andro
 ## 기술 스택
 
 ### 핵심 기술
-- **Kotlin** 2.1.0
+- **Kotlin** 2.2.20
 - **Compose Multiplatform** 1.7.1
-- **Gradle** 8.10
+- **Gradle** 8.13
+- **JDK** 21 (LTS)
 
 ### 주요 라이브러리
 - **Ktor** 3.0.3 - HTTP 클라이언트 및 네트워킹
@@ -25,35 +26,51 @@ Shoot App은 Kotlin Multiplatform과 Compose Multiplatform을 사용하여 Andro
 
 ## 프로젝트 구조
 
+이 프로젝트는 **표준 KMP (Kotlin Multiplatform) 구조**를 따릅니다:
+
 ```
 shoot-app/
-├── composeApp/               # 공통 로직 및 UI 모듈
+├── composeApp/               # 📦 KMP 공유 라이브러리 (90-95% 코드)
 │   ├── src/
-│   │   ├── commonMain/       # 공통 코드
+│   │   ├── commonMain/       # 🌍 공통 코드 (Android + iOS)
 │   │   │   ├── kotlin/
 │   │   │   │   └── com/shoot/app/
-│   │   │   │       ├── di/           # 의존성 주입
-│   │   │   │       ├── data/         # 데이터 레이어
-│   │   │   │       │   ├── network/  # 네트워크 클라이언트
+│   │   │   │       ├── App.kt         # 앱 진입점 UI
+│   │   │   │       ├── di/            # 의존성 주입
+│   │   │   │       ├── data/          # 데이터 레이어
+│   │   │   │       │   ├── network/   # 네트워크 클라이언트
 │   │   │   │       │   └── repository/# 리포지토리
-│   │   │   │       ├── domain/       # 도메인 레이어
-│   │   │   │       ├── presentation/ # 프레젠테이션 레이어
-│   │   │   │       │   ├── screens/  # 화면
-│   │   │   │       │   └── viewmodel/# 뷰모델
-│   │   │   │       └── util/         # 유틸리티
-│   │   │   └── sqldelight/           # 데이터베이스 스키마
-│   │   ├── androidMain/      # Android 전용 코드
-│   │   └── iosMain/          # iOS 전용 코드
-│   └── build.gradle.kts
+│   │   │   │       ├── domain/        # 도메인 레이어
+│   │   │   │       ├── presentation/  # 프레젠테이션 레이어
+│   │   │   │       │   ├── screens/   # 화면 (Compose UI)
+│   │   │   │       │   └── viewmodel/ # ScreenModel
+│   │   │   │       └── util/          # 유틸리티
+│   │   │   └── sqldelight/            # 데이터베이스 스키마
+│   │   ├── androidMain/       # 🤖 Android 전용 구현 (5%)
+│   │   │   └── kotlin/
+│   │   │       └── com/shoot/app/di/
+│   │   │           └── PlatformModule.android.kt
+│   │   └── iosMain/           # 🍎 iOS 전용 구현 (5%)
+│   │       └── kotlin/
+│   │           └── com/shoot/app/
+│   │               ├── di/PlatformModule.ios.kt
+│   │               └── MainViewController.kt
+│   └── build.gradle.kts      # KMP 라이브러리 빌드 설정
 │
-├── androidApp/               # Android 앱 모듈
-│   ├── src/main/
+├── androidApp/               # 📱 Android 진입점 (5% 코드)
+│   ├── src/main/             # 표준 Android 구조
 │   │   ├── kotlin/
+│   │   │   └── com/shoot/app/
+│   │   │       ├── MainActivity.kt     # 앱 시작점
+│   │   │       └── ShootApplication.kt # Application 클래스
 │   │   ├── res/
+│   │   │   ├── values/
+│   │   │   │   ├── strings.xml
+│   │   │   │   └── themes.xml
 │   │   └── AndroidManifest.xml
-│   └── build.gradle.kts
+│   └── build.gradle.kts      # 순수 Android 앱 빌드 설정
 │
-├── iosApp/                   # iOS 앱 모듈
+├── iosApp/                   # 🍎 iOS 진입점 (5% 코드)
 │   ├── Configuration.xcconfig
 │   └── Info.plist
 │
@@ -65,6 +82,22 @@ shoot-app/
 ├── settings.gradle.kts       # 프로젝트 설정
 └── README.md
 ```
+
+### 📋 모듈별 역할
+
+| 모듈 | 역할 | 플러그인 | 코드 비중 |
+|------|------|----------|-----------|
+| **composeApp** | 공유 비즈니스 로직 & UI | `kotlinMultiplatform` | 90-95% |
+| **androidApp** | Android 앱 진입점 | `kotlin("android")` | 5% |
+| **iosApp** | iOS 앱 진입점 | - | 5% |
+
+### ⚠️ 중요: androidApp은 KMP 모듈이 아닙니다!
+
+`androidApp`은 **순수 Android Application 모듈**입니다:
+- `kotlinMultiplatform` 플러그인을 사용하지 않습니다
+- `composeApp` 모듈을 의존성으로 가져와 사용합니다
+- MainActivity와 Application 클래스만 포함합니다
+- 표준 Android 프로젝트 구조(`src/main/`)를 사용합니다
 
 ## 아키텍처
 
@@ -153,15 +186,27 @@ composeApp/src/commonMain/kotlin/com/shoot/app/
 - ✅ JSON 직렬화 (kotlinx.serialization)
 - ✅ 대부분의 비즈니스 로직
 
-#### 📱 androidMain (5-10%의 코드)
+#### 📱 androidMain (2-3%의 코드)
 **Android 전용 구현만 작성합니다.**
 
 ```kotlin
 composeApp/src/androidMain/kotlin/com/shoot/app/
-└── di/PlatformModule.android.kt  # Android 플랫폼 DI
+└── di/PlatformModule.android.kt  # Android 플랫폼 DI (SQLite 드라이버 등)
 ```
 
-예시: Android SQLite 드라이버, Android 전용 센서 접근 등
+**예시**: Android SQLite 드라이버, Android Context 필요한 기능
+
+#### 📱 androidApp (2-3%의 코드)
+**Android 앱 진입점만 작성합니다.**
+
+```kotlin
+androidApp/src/main/kotlin/com/shoot/app/
+├── MainActivity.kt          # 앱 시작 Activity
+└── ShootApplication.kt      # Application 클래스 (Koin 초기화)
+```
+
+**역할**: Android 앱 시작, Koin DI 초기화
+**중요**: 비즈니스 로직은 여기에 작성하지 않습니다!
 
 #### 🍎 iosMain (5-10%의 코드)
 **iOS 전용 구현만 작성합니다.**
@@ -307,6 +352,138 @@ buildkonfig {
     }
 }
 ```
+
+## 🎯 베스트 프랙티스
+
+### 1. 📦 코드 작성 위치 원칙
+
+```
+✅ commonMain에 작성:
+- UI 컴포넌트 (Compose)
+- ViewModel/ScreenModel
+- Repository 인터페이스 & 구현
+- 비즈니스 로직
+- 네트워크 클라이언트
+- 데이터 모델
+
+❌ androidMain/iosMain에만 작성:
+- 플랫폼별 SQLite 드라이버
+- 플랫폼 Context 필요한 기능
+- 플랫폼별 API (Camera, Location 등)
+
+❌ androidApp에는 작성 금지:
+- 비즈니스 로직
+- UI 컴포넌트
+- Repository
+→ MainActivity와 Application 클래스만!
+```
+
+### 2. 🏗️ Clean Architecture 레이어 구분
+
+```
+📂 composeApp/src/commonMain/kotlin/com/shoot/app/
+
+presentation/          # UI Layer
+├── screens/           # Compose UI
+├── viewmodel/         # ScreenModel
+└── components/        # 재사용 컴포넌트
+
+domain/                # Domain Layer (선택사항)
+├── usecase/           # Use Cases
+└── model/             # Domain Models
+
+data/                  # Data Layer
+├── repository/        # Repository 구현
+├── network/           # API 클라이언트
+├── local/             # 로컬 저장소
+└── model/             # Data Transfer Objects (DTO)
+
+di/                    # Dependency Injection
+└── AppModule.kt       # Koin 모듈
+```
+
+### 3. 🔧 개발 시 주의사항
+
+#### ✅ DO (권장사항)
+- commonMain에 최대한 많은 코드 작성 (90%+ 목표)
+- `expect/actual` 패턴은 정말 필요할 때만 사용
+- Repository 패턴으로 데이터 소스 추상화
+- Koin을 사용한 의존성 주입
+- Voyager ScreenModel 사용 (일반 ViewModel 대신)
+- sealed class/interface로 UI State 관리
+
+#### ❌ DON'T (금지사항)
+- androidApp에 비즈니스 로직 작성 금지
+- Android/iOS 전용 API를 commonMain에서 직접 호출 금지
+- 플랫폼별 Context를 commonMain에 전달 금지
+- kotlinMultiplatform 플러그인을 androidApp에 추가 금지
+
+### 4. 📱 모듈별 빌드 설정
+
+#### composeApp (KMP 라이브러리)
+```kotlin
+plugins {
+    alias(libs.plugins.kotlinMultiplatform)  ✅
+    alias(libs.plugins.androidLibrary)        ✅
+    alias(libs.plugins.composeMultiplatform)  ✅
+}
+
+kotlin {
+    androidTarget { ... }
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+}
+```
+
+#### androidApp (순수 Android)
+```kotlin
+plugins {
+    alias(libs.plugins.androidApplication)   ✅
+    kotlin("android")                         ✅
+    alias(libs.plugins.composeCompiler)      ✅
+}
+
+dependencies {
+    implementation(project(":composeApp"))   ✅
+}
+```
+
+### 5. 🚀 개발 워크플로우
+
+```
+1. 새로운 기능 개발
+   └─> commonMain에 Screen, ViewModel, Repository 작성
+
+2. 플랫폼별 기능 필요 시
+   └─> expect/actual 패턴 사용
+   └─> androidMain/iosMain에 구현
+
+3. Android 앱 설정 변경
+   └─> androidApp/AndroidManifest.xml 수정
+   └─> androidApp/MainActivity 수정 (최소화)
+
+4. 빌드 & 실행
+   └─> Android Studio Run Configuration 사용
+   └─> 또는 ./gradlew :androidApp:installDebug
+```
+
+### 6. 🔍 트러블슈팅
+
+#### "ClassNotFoundException" 발생 시
+- androidApp이 `kotlinMultiplatform` 플러그인을 사용하고 있는지 확인
+  → 사용하면 안 됨! `kotlin("android")` 사용
+- 소스 위치 확인: `src/main/` (NOT `src/androidMain/`)
+
+#### "Unresolved reference" 에러 시
+- composeApp 의존성 확인
+- Gradle sync 실행
+- Clean & Rebuild
+
+#### iOS 빌드 실패 시
+- Xcode 버전 확인 (15.0+)
+- `./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64`로 수동 빌드
+- Podfile 업데이트 확인
 
 ## 라이선스
 
