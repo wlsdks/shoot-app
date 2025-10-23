@@ -1,0 +1,68 @@
+-- User table
+CREATE TABLE IF NOT EXISTS User (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+-- Sample entity table
+CREATE TABLE IF NOT EXISTS Item (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    userId INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+);
+
+-- Queries
+
+-- User queries
+selectAllUsers:
+SELECT * FROM User;
+
+selectUserById:
+SELECT * FROM User WHERE id = ?;
+
+selectUserByUsername:
+SELECT * FROM User WHERE username = ?;
+
+insertUser:
+INSERT INTO User(username, email, createdAt, updatedAt)
+VALUES (?, ?, ?, ?);
+
+updateUser:
+UPDATE User
+SET username = ?, email = ?, updatedAt = ?
+WHERE id = ?;
+
+deleteUser:
+DELETE FROM User WHERE id = ?;
+
+-- Item queries
+selectAllItems:
+SELECT * FROM Item;
+
+selectItemById:
+SELECT * FROM Item WHERE id = ?;
+
+selectItemsByUserId:
+SELECT * FROM Item WHERE userId = ?;
+
+insertItem:
+INSERT INTO Item(title, description, userId, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?);
+
+updateItem:
+UPDATE Item
+SET title = ?, description = ?, updatedAt = ?
+WHERE id = ?;
+
+deleteItem:
+DELETE FROM Item WHERE id = ?;
+
+deleteItemsByUserId:
+DELETE FROM Item WHERE userId = ?;

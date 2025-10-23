@@ -1,0 +1,11 @@
+## This file must be in your .gitignore
+## Copy this file to local.properties and fill in your local paths
+
+# Location of the Android SDK
+sdk.dir=/Users/YOUR_USERNAME/Library/Android/sdk
+
+# OR on Windows
+# sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
+
+# OR on Linux
+# sdk.dir=/home/YOUR_USERNAME/Android/Sdk
