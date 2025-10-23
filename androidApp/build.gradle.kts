@@ -20,6 +20,12 @@ kotlin {
         androidMain.dependencies {
             implementation(project(":composeApp"))
             implementation(libs.androidx.activity.compose)
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(libs.koin.android)
+            implementation(libs.koin.core)
         }
     }
 }
