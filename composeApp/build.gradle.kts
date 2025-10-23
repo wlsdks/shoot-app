@@ -1,3 +1,5 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.INT
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -15,7 +17,7 @@ kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
@@ -41,7 +43,6 @@ kotlin {
 
             // Lifecycle
             implementation(libs.androidx.lifecycle.viewmodel)
-            implementation(libs.androidx.lifecycle.runtime.compose)
 
             // Ktor
             implementation(libs.ktor.client.core)
@@ -77,6 +78,7 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.android.driver)
             implementation(libs.koin.android)
@@ -103,8 +105,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     buildFeatures {
@@ -116,6 +118,7 @@ sqldelight {
     databases {
         create("ShootDatabase") {
             packageName.set("com.shoot.app.database")
+            srcDirs.setFrom("src/commonMain/sqldelight")
         }
     }
 }
@@ -124,8 +127,8 @@ buildkonfig {
     packageName = "com.shoot.app"
 
     defaultConfigs {
-        buildConfigField("String", "APP_NAME", "Shoot App")
-        buildConfigField("String", "VERSION_NAME", "1.0.0")
-        buildConfigField("Int", "VERSION_CODE", "1")
+        buildConfigField(STRING, "APP_NAME", "Shoot App")
+        buildConfigField(STRING, "VERSION_NAME", "1.0.0")
+        buildConfigField(INT, "VERSION_CODE", "1")
     }
 }

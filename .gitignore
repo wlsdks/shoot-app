@@ -66,6 +66,13 @@ Pods/
 **/node_modules
 **/package-lock.json
 **/yarn.lock
+.kotlin/
+kotlin-js-store/
+
+# Gradle
+.gradle-cache/
+gradle-app.setting
+gradle-wrapper.properties.backup
 
 # SQLDelight
 *.db
@@ -99,3 +106,6 @@ GoogleService-Info.plist
 # Logs
 *.log
 logs/
+
+# Heap dumps
+*.hprof

@@ -1,11 +1,11 @@
 [versions]
 # Kotlin & Compose
-kotlin = "2.1.0"
+kotlin = "2.2.20"
 compose = "1.7.1"
 composeCompiler = "1.5.15"
 
 # Android
-agp = "8.7.3"
+agp = "8.13.0"
 androidx-activityCompose = "1.9.3"
 androidx-core = "1.15.0"
 androidx-lifecycle = "2.8.7"

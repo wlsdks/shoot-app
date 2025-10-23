@@ -1,7 +1,7 @@
 package com.shoot.app.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import com.shoot.app.data.repository.SampleRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +16,7 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val sampleRepository: SampleRepository
-) : ViewModel() {
+) : ScreenModel {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -26,7 +26,7 @@ class HomeViewModel(
     }
 
     fun loadData() {
-        viewModelScope.launch {
+        screenModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             sampleRepository.getSampleData()
