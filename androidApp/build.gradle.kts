@@ -1,37 +1,11 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.composeMultiplatform)
+    kotlin("android")
     alias(libs.plugins.composeCompiler)
 }
 
-kotlin {
-    androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
-        }
-    }
-
-    sourceSets {
-        androidMain.dependencies {
-            implementation(project(":composeApp"))
-            implementation(libs.androidx.activity.compose)
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(libs.koin.android)
-            implementation(libs.koin.core)
-        }
-    }
-}
-
 android {
-    namespace = "com.shoot.app.android"
+    namespace = "com.shoot.app"
     compileSdk = 35
 
     defaultConfig {
@@ -67,9 +41,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
+    kotlinOptions {
+        jvmTarget = "21"
+    }
+
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 
     packaging {
@@ -77,4 +54,19 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+dependencies {
+    implementation(project(":composeApp"))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.koin.android)
+    implementation(libs.koin.core)
+
+    // Compose UI
+    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.foundation:foundation")
 }
