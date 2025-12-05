@@ -188,8 +188,9 @@ class ChatListScreen : Screen {
                                     ChatRoomListItem(
                                         chatRoom = chatRoom,
                                         onClick = {
-                                            // TODO: Navigate to chat detail screen
-                                            // navigator.push(ChatDetailScreen(chatRoom.roomId))
+                                            // Navigate to chat screen
+                                            // TODO: Get current user ID from auth state
+                                            navigator.push(ChatScreen(chatRoom, currentUserId = 1L))
                                         },
                                         onToggleFavorite = {
                                             chatRoomViewModel.toggleFavorite(
