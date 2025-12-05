@@ -26,6 +26,7 @@ import com.shoot.app.presentation.chat.ChatViewModel
 import com.shoot.app.presentation.chat.components.MessageBubble
 import com.shoot.app.presentation.chat.components.EditMessageDialog
 import com.shoot.app.presentation.chat.components.DeleteMessageDialog
+import com.shoot.app.presentation.chat.components.TypingIndicator
 import com.shoot.app.domain.model.Message
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -58,8 +59,10 @@ data class ChatScreen(
         val messages by viewModel.messages.collectAsState()
         val messagesState by viewModel.messagesState.collectAsState()
         val connectionState by viewModel.connectionState.collectAsState()
+        val typingUsers by viewModel.typingUsers.collectAsState()
 
         var messageText by remember { mutableStateOf("") }
+        var wasTyping by remember { mutableStateOf(false) }
         val listState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
 
@@ -92,11 +95,23 @@ data class ChatScreen(
             bottomBar = {
                 ChatInputBar(
                     value = messageText,
-                    onValueChange = { messageText = it },
+                    onValueChange = { newText ->
+                        messageText = newText
+
+                        // 타이핑 이벤트 전송
+                        val isTyping = newText.isNotBlank()
+                        if (isTyping != wasTyping) {
+                            viewModel.sendTypingEvent(isTyping)
+                            wasTyping = isTyping
+                        }
+                    },
                     onSendClick = {
                         if (messageText.isNotBlank()) {
                             viewModel.sendMessage(messageText)
                             messageText = ""
+                            // 전송 후 타이핑 종료 이벤트
+                            viewModel.sendTypingEvent(false)
+                            wasTyping = false
                         }
                     }
                 )
@@ -140,29 +155,37 @@ data class ChatScreen(
                             )
                         } else {
                             // Messages list
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 8.dp)
-                            ) {
-                                items(
-                                    items = messages,
-                                    key = { it.tempId ?: it.id }
-                                ) { message ->
-                                    MessageBubble(
-                                        message = message,
-                                        isCurrentUser = message.senderId == currentUserId,
-                                        onRetry = { viewModel.retryMessage(message) },
-                                        onEdit = {
-                                            messageToEdit = message
-                                        },
-                                        onDelete = {
-                                            messageToDelete = message
-                                        },
-                                        onReact = { reactionType ->
-                                            viewModel.toggleReaction(message.id, reactionType)
-                                        }
-                                    )
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                LazyColumn(
+                                    state = listState,
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(vertical = 8.dp)
+                                ) {
+                                    items(
+                                        items = messages,
+                                        key = { it.tempId ?: it.id }
+                                    ) { message ->
+                                        MessageBubble(
+                                            message = message,
+                                            isCurrentUser = message.senderId == currentUserId,
+                                            totalParticipants = chatRoom.participants.size,
+                                            onRetry = { viewModel.retryMessage(message) },
+                                            onEdit = {
+                                                messageToEdit = message
+                                            },
+                                            onDelete = {
+                                                messageToDelete = message
+                                            },
+                                            onReact = { reactionType ->
+                                                viewModel.toggleReaction(message.id, reactionType)
+                                            }
+                                        )
+                                    }
+                                }
+
+                                // Typing indicator
+                                if (typingUsers.isNotEmpty()) {
+                                    TypingIndicator(typingUserNames = typingUsers)
                                 }
                             }
                         }

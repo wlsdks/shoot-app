@@ -27,6 +27,7 @@ fun MessageBubble(
     message: Message,
     isCurrentUser: Boolean,
     modifier: Modifier = Modifier,
+    totalParticipants: Int = 0, // 채팅방 전체 참가자 수
     onRetry: (() -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
@@ -124,6 +125,15 @@ fun MessageBubble(
                         status = message.status,
                         onRetry = onRetry
                     )
+
+                    // Read receipt indicator
+                    if (message.status == MessageStatus.SAVED && message.readBy.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        ReadReceiptIndicator(
+                            readByCount = message.readBy.size,
+                            totalParticipants = totalParticipants
+                        )
+                    }
                 }
             }
 
@@ -253,6 +263,27 @@ private fun getEmojiForReaction(reactionType: String): String {
         "ANGRY" -> "😡"
         else -> reactionType // fallback to the original string
     }
+}
+
+@Composable
+private fun ReadReceiptIndicator(
+    readByCount: Int,
+    totalParticipants: Int
+) {
+    // 본인 제외한 참가자 수
+    val otherParticipants = if (totalParticipants > 1) totalParticipants - 1 else 1
+    val isReadByAll = readByCount >= otherParticipants
+
+    Text(
+        text = if (isReadByAll) "읽음" else "읽음 $readByCount",
+        style = MaterialTheme.typography.labelSmall,
+        color = if (isReadByAll) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        },
+        fontSize = 9.sp
+    )
 }
 
 @Composable

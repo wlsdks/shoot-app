@@ -13,6 +13,7 @@ data class Message(
     val replyToMessageId: String? = null,
     val reactions: Map<String, List<Long>> = emptyMap(),
     val mentions: List<Long> = emptyList(),
+    val readBy: List<Long> = emptyList(), // 메시지를 읽은 사용자 ID 목록
     val createdAt: String,
     val updatedAt: String? = null,
     val tempId: String? = null // 로컬에서 생성한 임시 ID

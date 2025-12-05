@@ -34,6 +34,9 @@ class ChatViewModel(
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
 
+    private val _typingUsers = MutableStateFlow<List<String>>(emptyList())
+    val typingUsers: StateFlow<List<String>> = _typingUsers.asStateFlow()
+
     val connectionState: StateFlow<ConnectionState> = webSocketClient.connectionState
 
     private val json = Json {
@@ -45,6 +48,7 @@ class ChatViewModel(
         loadMessages()
         connectWebSocket()
         observeIncomingMessages()
+        markMessagesAsRead()
     }
 
     /**
@@ -243,6 +247,54 @@ class ChatViewModel(
                 .onFailure { error ->
                     println("[ChatViewModel] Failed to toggle reaction: ${error.message}")
                 }
+        }
+    }
+
+    /**
+     * 타이핑 이벤트 전송
+     */
+    fun sendTypingEvent(isTyping: Boolean) {
+        screenModelScope.launch {
+            try {
+                val event = mapOf(
+                    "roomId" to roomId,
+                    "userId" to currentUserId,
+                    "isTyping" to isTyping
+                )
+                val jsonString = json.encodeToString(
+                    kotlinx.serialization.serializer(),
+                    event
+                )
+                webSocketClient.sendToDestination("/app/chat/typing", jsonString)
+            } catch (e: Exception) {
+                println("[ChatViewModel] Failed to send typing event: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * 메시지를 읽음으로 표시
+     */
+    private fun markMessagesAsRead() {
+        screenModelScope.launch {
+            // 메시지 목록이 로드될 때까지 대기
+            messages.collect { messageList ->
+                if (messageList.isNotEmpty()) {
+                    val unreadMessageIds = messageList
+                        .filter { !it.readBy.contains(currentUserId) && it.senderId != currentUserId }
+                        .map { it.id }
+
+                    if (unreadMessageIds.isNotEmpty()) {
+                        messageRepository.markAsRead(roomId, currentUserId, unreadMessageIds)
+                            .onSuccess {
+                                println("[ChatViewModel] Marked ${unreadMessageIds.size} messages as read")
+                            }
+                            .onFailure { error ->
+                                println("[ChatViewModel] Failed to mark messages as read: ${error.message}")
+                            }
+                    }
+                }
+            }
         }
     }
 
