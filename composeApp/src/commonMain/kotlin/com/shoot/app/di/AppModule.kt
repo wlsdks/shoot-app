@@ -7,14 +7,18 @@ import com.shoot.app.data.network.HttpClientFactory
 import com.shoot.app.data.remote.api.AuthApiService
 import com.shoot.app.data.remote.api.ChatRoomApiService
 import com.shoot.app.data.remote.api.FriendApiService
+import com.shoot.app.data.remote.api.MessageApiService
 import com.shoot.app.data.repository.AuthRepository
 import com.shoot.app.data.repository.AuthRepositoryImpl
 import com.shoot.app.data.repository.ChatRoomRepository
 import com.shoot.app.data.repository.ChatRoomRepositoryImpl
 import com.shoot.app.data.repository.FriendRepository
 import com.shoot.app.data.repository.FriendRepositoryImpl
+import com.shoot.app.data.repository.MessageRepository
+import com.shoot.app.data.repository.MessageRepositoryImpl
 import com.shoot.app.data.repository.SampleRepository
 import com.shoot.app.data.repository.SampleRepositoryImpl
+import com.shoot.app.data.websocket.WebSocketClient
 import com.shoot.app.presentation.auth.AuthViewModel
 import com.shoot.app.presentation.chatroom.ChatRoomViewModel
 import com.shoot.app.presentation.friend.FriendViewModel
@@ -36,12 +40,17 @@ val commonModule = module {
     single { AuthApiService(get()) }
     single { FriendApiService(get()) }
     single { ChatRoomApiService(get()) }
+    single { MessageApiService(get()) }
+
+    // WebSocket Client
+    single { WebSocketClient(get(), "localhost:8100") }
 
     // Repositories
     singleOf(::SampleRepositoryImpl) bind SampleRepository::class
     singleOf(::AuthRepositoryImpl) bind AuthRepository::class
     singleOf(::FriendRepositoryImpl) bind FriendRepository::class
     singleOf(::ChatRoomRepositoryImpl) bind ChatRoomRepository::class
+    singleOf(::MessageRepositoryImpl) bind MessageRepository::class
 
     // ViewModels / ScreenModels
     single<HomeViewModel> { HomeViewModel(get()) }
