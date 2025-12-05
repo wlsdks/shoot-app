@@ -37,6 +37,9 @@ class ChatViewModel(
     private val _typingUsers = MutableStateFlow<List<String>>(emptyList())
     val typingUsers: StateFlow<List<String>> = _typingUsers.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     val connectionState: StateFlow<ConnectionState> = webSocketClient.connectionState
 
     private val json = Json {
@@ -48,7 +51,6 @@ class ChatViewModel(
         loadMessages()
         connectWebSocket()
         observeIncomingMessages()
-        markMessagesAsRead()
     }
 
     /**
@@ -62,6 +64,8 @@ class ChatViewModel(
                 .onSuccess { result ->
                     _messages.value = result.messages.sortedBy { it.createdAt }
                     _messagesState.value = UiState.Success(result.messages)
+                    // 메시지 로드 후 읽음 표시
+                    markMessagesAsRead()
                 }
                 .onFailure { error ->
                     _messagesState.value = UiState.Error(error.message ?: "Failed to load messages")
@@ -273,26 +277,45 @@ class ChatViewModel(
     }
 
     /**
+     * 에러 메시지 설정
+     */
+    fun showError(message: String) {
+        _errorMessage.value = message
+    }
+
+    /**
+     * 에러 메시지 클리어
+     */
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
+    /**
+     * WebSocket 재연결
+     */
+    fun reconnectWebSocket() {
+        connectWebSocket()
+    }
+
+    /**
      * 메시지를 읽음으로 표시
      */
-    private fun markMessagesAsRead() {
+    fun markMessagesAsRead() {
         screenModelScope.launch {
-            // 메시지 목록이 로드될 때까지 대기
-            messages.collect { messageList ->
-                if (messageList.isNotEmpty()) {
-                    val unreadMessageIds = messageList
-                        .filter { !it.readBy.contains(currentUserId) && it.senderId != currentUserId }
-                        .map { it.id }
+            val messageList = messages.value
+            if (messageList.isNotEmpty()) {
+                val unreadMessageIds = messageList
+                    .filter { !it.readBy.contains(currentUserId) && it.senderId != currentUserId }
+                    .map { it.id }
 
-                    if (unreadMessageIds.isNotEmpty()) {
-                        messageRepository.markAsRead(roomId, currentUserId, unreadMessageIds)
-                            .onSuccess {
-                                println("[ChatViewModel] Marked ${unreadMessageIds.size} messages as read")
-                            }
-                            .onFailure { error ->
-                                println("[ChatViewModel] Failed to mark messages as read: ${error.message}")
-                            }
-                    }
+                if (unreadMessageIds.isNotEmpty()) {
+                    messageRepository.markAsRead(roomId, currentUserId, unreadMessageIds)
+                        .onSuccess {
+                            println("[ChatViewModel] Marked ${unreadMessageIds.size} messages as read")
+                        }
+                        .onFailure { error ->
+                            println("[ChatViewModel] Failed to mark messages as read: ${error.message}")
+                        }
                 }
             }
         }

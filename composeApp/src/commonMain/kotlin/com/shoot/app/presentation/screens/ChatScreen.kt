@@ -73,8 +73,16 @@ data class ChatScreen(
         // Auto-scroll to bottom when new message arrives
         LaunchedEffect(messages.size) {
             if (messages.isNotEmpty()) {
-                coroutineScope.launch {
-                    listState.animateScrollToItem(messages.size - 1)
+                // 현재 스크롤 위치가 거의 하단에 있을 때만 자동 스크롤
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val isNearBottom = lastVisibleItem?.let {
+                    it.index >= messages.size - 3
+                } ?: true
+
+                if (isNearBottom) {
+                    coroutineScope.launch {
+                        listState.animateScrollToItem(messages.size - 1)
+                    }
                 }
             }
         }
