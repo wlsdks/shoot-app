@@ -24,6 +24,9 @@ import com.shoot.app.domain.model.ChatRoom
 import com.shoot.app.presentation.common.UiState
 import com.shoot.app.presentation.chat.ChatViewModel
 import com.shoot.app.presentation.chat.components.MessageBubble
+import com.shoot.app.presentation.chat.components.EditMessageDialog
+import com.shoot.app.presentation.chat.components.DeleteMessageDialog
+import com.shoot.app.domain.model.Message
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -59,6 +62,10 @@ data class ChatScreen(
         var messageText by remember { mutableStateOf("") }
         val listState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
+
+        // Dialog states
+        var messageToEdit by remember { mutableStateOf<Message?>(null) }
+        var messageToDelete by remember { mutableStateOf<Message?>(null) }
 
         // Auto-scroll to bottom when new message arrives
         LaunchedEffect(messages.size) {
@@ -145,7 +152,16 @@ data class ChatScreen(
                                     MessageBubble(
                                         message = message,
                                         isCurrentUser = message.senderId == currentUserId,
-                                        onRetry = { viewModel.retryMessage(message) }
+                                        onRetry = { viewModel.retryMessage(message) },
+                                        onEdit = {
+                                            messageToEdit = message
+                                        },
+                                        onDelete = {
+                                            messageToDelete = message
+                                        },
+                                        onReact = { reactionType ->
+                                            viewModel.toggleReaction(message.id, reactionType)
+                                        }
                                     )
                                 }
                             }
@@ -153,6 +169,29 @@ data class ChatScreen(
                     }
                 }
             }
+        }
+
+        // Edit message dialog
+        messageToEdit?.let { message ->
+            EditMessageDialog(
+                currentText = message.content.text,
+                onDismiss = { messageToEdit = null },
+                onConfirm = { newText ->
+                    viewModel.editMessage(message.id, newText)
+                    messageToEdit = null
+                }
+            )
+        }
+
+        // Delete message dialog
+        messageToDelete?.let { message ->
+            DeleteMessageDialog(
+                onDismiss = { messageToDelete = null },
+                onConfirm = {
+                    viewModel.deleteMessage(message.id)
+                    messageToDelete = null
+                }
+            )
         }
     }
 }

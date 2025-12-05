@@ -1,13 +1,16 @@
 package com.shoot.app.presentation.chat.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,13 +21,19 @@ import com.shoot.app.design.theme.*
 import com.shoot.app.domain.model.Message
 import com.shoot.app.domain.model.MessageStatus
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageBubble(
     message: Message,
     isCurrentUser: Boolean,
     modifier: Modifier = Modifier,
-    onRetry: (() -> Unit)? = null
+    onRetry: (() -> Unit)? = null,
+    onLongPress: (() -> Unit)? = null,
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+    onReact: ((String) -> Unit)? = null
 ) {
+    var showContextMenu by remember { mutableStateOf(false) }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -48,7 +57,14 @@ fun MessageBubble(
                 } else {
                     MessageBubbleReceived
                 },
-                tonalElevation = 1.dp
+                tonalElevation = 1.dp,
+                modifier = Modifier.combinedClickable(
+                    onClick = {},
+                    onLongClick = {
+                        showContextMenu = true
+                        onLongPress?.invoke()
+                    }
+                )
             ) {
                 Column(
                     modifier = Modifier.padding(12.dp)
@@ -77,6 +93,15 @@ fun MessageBubble(
                 }
             }
 
+            // Reactions display
+            if (message.reactions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                MessageReactionsRow(
+                    reactions = message.reactions,
+                    onReactionClick = onReact
+                )
+            }
+
             Spacer(modifier = Modifier.height(4.dp))
 
             // Timestamp and status
@@ -101,7 +126,132 @@ fun MessageBubble(
                     )
                 }
             }
+
+            // Context menu
+            if (showContextMenu) {
+                MessageContextMenu(
+                    isCurrentUser = isCurrentUser,
+                    isEdited = message.content.isEdited,
+                    onDismiss = { showContextMenu = false },
+                    onEdit = {
+                        showContextMenu = false
+                        onEdit?.invoke()
+                    },
+                    onDelete = {
+                        showContextMenu = false
+                        onDelete?.invoke()
+                    },
+                    onReact = { reaction ->
+                        showContextMenu = false
+                        onReact?.invoke(reaction)
+                    }
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun MessageContextMenu(
+    isCurrentUser: Boolean,
+    isEdited: Boolean,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onReact: (String) -> Unit
+) {
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = onDismiss
+    ) {
+        // Reactions
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf("👍", "❤️", "😄", "😮", "😢", "😡").forEach { emoji ->
+                TextButton(onClick = { onReact(emoji) }) {
+                    Text(text = emoji, fontSize = 20.sp)
+                }
+            }
+        }
+
+        HorizontalDivider()
+
+        // Edit (only for current user's messages)
+        if (isCurrentUser) {
+            DropdownMenuItem(
+                text = { Text("편집") },
+                onClick = onEdit
+            )
+        }
+
+        // Delete
+        if (isCurrentUser) {
+            DropdownMenuItem(
+                text = { Text("삭제", color = MaterialTheme.colorScheme.error) },
+                onClick = onDelete
+            )
+        }
+
+        // Copy (TODO: implement clipboard)
+        DropdownMenuItem(
+            text = { Text("복사") },
+            onClick = onDismiss
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MessageReactionsRow(
+    reactions: Map<String, List<Long>>,
+    onReactionClick: ((String) -> Unit)?
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.padding(start = 4.dp)
+    ) {
+        reactions.forEach { (reactionType, userIds) ->
+            if (userIds.isNotEmpty()) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.combinedClickable(
+                        onClick = { onReactionClick?.invoke(reactionType) },
+                        onLongClick = { /* TODO: Show who reacted */ }
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = getEmojiForReaction(reactionType),
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = userIds.size.toString(),
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun getEmojiForReaction(reactionType: String): String {
+    return when (reactionType.uppercase()) {
+        "LIKE" -> "👍"
+        "LOVE" -> "❤️"
+        "HAHA" -> "😄"
+        "WOW" -> "😮"
+        "SAD" -> "😢"
+        "ANGRY" -> "😡"
+        else -> reactionType // fallback to the original string
     }
 }
 
