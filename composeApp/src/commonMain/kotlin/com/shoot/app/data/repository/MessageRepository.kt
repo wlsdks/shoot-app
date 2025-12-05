@@ -26,6 +26,8 @@ interface MessageRepository {
         page: Int = 0,
         size: Int = 20
     ): Result<MessagesResult>
+    suspend fun toggleReaction(messageId: String, userId: Long, reactionType: String): Result<Message>
+    suspend fun getReactions(messageId: String): Result<Map<String, List<Long>>>
 }
 
 data class MessagesResult(
@@ -156,6 +158,34 @@ class MessageRepositoryImpl(
                 )
             } else {
                 throw Exception(response.message ?: "Failed to search messages")
+            }
+        }
+    }
+
+    override suspend fun toggleReaction(
+        messageId: String,
+        userId: Long,
+        reactionType: String
+    ): Result<Message> {
+        return safeApiCall {
+            val response = messageApiService.toggleReaction(messageId, userId, reactionType)
+
+            if (response.success && response.data != null) {
+                response.data.toDomain()
+            } else {
+                throw Exception(response.message ?: "Failed to toggle reaction")
+            }
+        }
+    }
+
+    override suspend fun getReactions(messageId: String): Result<Map<String, List<Long>>> {
+        return safeApiCall {
+            val response = messageApiService.getReactions(messageId)
+
+            if (response.success && response.data != null) {
+                response.data
+            } else {
+                throw Exception(response.message ?: "Failed to get reactions")
             }
         }
     }

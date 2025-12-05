@@ -65,3 +65,19 @@ data class UrlPreview(
     val imageUrl: String? = null,
     val siteName: String? = null
 )
+
+@Serializable
+enum class ReactionType {
+    LIKE,    // 👍
+    LOVE,    // ❤️
+    HAHA,    // 😄
+    WOW,     // 😮
+    SAD,     // 😢
+    ANGRY    // 😡
+}
+
+@Serializable
+data class MessageReaction(
+    val type: ReactionType,
+    val userIds: List<Long>
+)

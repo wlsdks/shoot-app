@@ -196,6 +196,57 @@ class ChatViewModel(
     }
 
     /**
+     * 메시지 편집
+     */
+    fun editMessage(messageId: String, newContent: String) {
+        screenModelScope.launch {
+            messageRepository.editMessage(messageId, newContent, currentUserId)
+                .onSuccess { updatedMessage ->
+                    _messages.value = _messages.value.map {
+                        if (it.id == messageId) updatedMessage else it
+                    }
+                }
+                .onFailure { error ->
+                    println("[ChatViewModel] Failed to edit message: ${error.message}")
+                }
+        }
+    }
+
+    /**
+     * 메시지 삭제
+     */
+    fun deleteMessage(messageId: String) {
+        screenModelScope.launch {
+            messageRepository.deleteMessage(messageId, currentUserId)
+                .onSuccess { deletedMessage ->
+                    _messages.value = _messages.value.map {
+                        if (it.id == messageId) deletedMessage else it
+                    }
+                }
+                .onFailure { error ->
+                    println("[ChatViewModel] Failed to delete message: ${error.message}")
+                }
+        }
+    }
+
+    /**
+     * 메시지에 반응 추가/제거 (토글)
+     */
+    fun toggleReaction(messageId: String, reactionType: String) {
+        screenModelScope.launch {
+            messageRepository.toggleReaction(messageId, currentUserId, reactionType)
+                .onSuccess { updatedMessage ->
+                    _messages.value = _messages.value.map {
+                        if (it.id == messageId) updatedMessage else it
+                    }
+                }
+                .onFailure { error ->
+                    println("[ChatViewModel] Failed to toggle reaction: ${error.message}")
+                }
+        }
+    }
+
+    /**
      * 현재 타임스탬프 (ISO 8601 형식)
      */
     private fun getCurrentTimestamp(): String {

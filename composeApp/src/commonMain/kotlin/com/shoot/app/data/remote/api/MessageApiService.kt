@@ -116,4 +116,30 @@ class MessageApiService(private val client: HttpClient) {
             parameter("size", size)
         }.body()
     }
+
+    /**
+     * 메시지에 반응 추가/제거 (토글)
+     */
+    suspend fun toggleReaction(
+        messageId: String,
+        userId: Long,
+        reactionType: String
+    ): ResponseDto<MessageResponse> {
+        return client.post("/messages/$messageId/reactions") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                mapOf(
+                    "userId" to userId,
+                    "reactionType" to reactionType
+                )
+            )
+        }.body()
+    }
+
+    /**
+     * 메시지의 반응 목록 조회
+     */
+    suspend fun getReactions(messageId: String): ResponseDto<Map<String, List<Long>>> {
+        return client.get("/messages/$messageId/reactions").body()
+    }
 }
