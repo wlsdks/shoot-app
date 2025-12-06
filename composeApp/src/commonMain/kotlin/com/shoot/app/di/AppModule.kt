@@ -8,6 +8,8 @@ import com.shoot.app.data.remote.api.AuthApiService
 import com.shoot.app.data.remote.api.ChatRoomApiService
 import com.shoot.app.data.remote.api.FriendApiService
 import com.shoot.app.data.remote.api.MessageApiService
+import com.shoot.app.data.remote.api.UserApiService
+import com.shoot.app.data.remote.api.FileApiService
 import com.shoot.app.data.repository.AuthRepository
 import com.shoot.app.data.repository.AuthRepositoryImpl
 import com.shoot.app.data.repository.ChatRoomRepository
@@ -18,10 +20,15 @@ import com.shoot.app.data.repository.MessageRepository
 import com.shoot.app.data.repository.MessageRepositoryImpl
 import com.shoot.app.data.repository.SampleRepository
 import com.shoot.app.data.repository.SampleRepositoryImpl
+import com.shoot.app.data.repository.UserRepository
+import com.shoot.app.data.repository.UserRepositoryImpl
+import com.shoot.app.data.repository.FileRepository
+import com.shoot.app.data.repository.FileRepositoryImpl
 import com.shoot.app.data.websocket.WebSocketClient
 import com.shoot.app.presentation.auth.AuthViewModel
 import com.shoot.app.presentation.chatroom.ChatRoomViewModel
 import com.shoot.app.presentation.friend.FriendViewModel
+import com.shoot.app.presentation.settings.SettingsViewModel
 import com.shoot.app.presentation.viewmodel.HomeViewModel
 import io.ktor.client.HttpClient
 import org.koin.core.module.Module
@@ -41,6 +48,8 @@ val commonModule = module {
     single { FriendApiService(get()) }
     single { ChatRoomApiService(get()) }
     single { MessageApiService(get()) }
+    single { UserApiService(get()) }
+    single { FileApiService(get()) }
 
     // WebSocket Client
     single { WebSocketClient(get(), "localhost:8100") }
@@ -51,12 +60,15 @@ val commonModule = module {
     singleOf(::FriendRepositoryImpl) bind FriendRepository::class
     singleOf(::ChatRoomRepositoryImpl) bind ChatRoomRepository::class
     singleOf(::MessageRepositoryImpl) bind MessageRepository::class
+    singleOf(::UserRepositoryImpl) bind UserRepository::class
+    singleOf(::FileRepositoryImpl) bind FileRepository::class
 
     // ViewModels / ScreenModels
     single<HomeViewModel> { HomeViewModel(get()) }
     single<AuthViewModel> { AuthViewModel(get(), get()) }
     single<FriendViewModel> { FriendViewModel(get(), get()) }
     single<ChatRoomViewModel> { ChatRoomViewModel(get(), get()) }
+    single<SettingsViewModel> { SettingsViewModel(get(), get(), get()) }
 }
 
 expect val platformModule: Module

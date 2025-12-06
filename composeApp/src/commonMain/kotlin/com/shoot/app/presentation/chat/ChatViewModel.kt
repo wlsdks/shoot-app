@@ -40,6 +40,19 @@ class ChatViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    // Search state
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<Message>>(emptyList())
+    val searchResults: StateFlow<List<Message>> = _searchResults.asStateFlow()
+
+    private val _searchState = MutableStateFlow<UiState<List<Message>>>(UiState.Idle)
+    val searchState: StateFlow<UiState<List<Message>>> = _searchState.asStateFlow()
+
+    private val _isSearchMode = MutableStateFlow(false)
+    val isSearchMode: StateFlow<Boolean> = _isSearchMode.asStateFlow()
+
     val connectionState: StateFlow<ConnectionState> = webSocketClient.connectionState
 
     private val json = Json {
@@ -319,6 +332,67 @@ class ChatViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * 검색 모드 진입
+     */
+    fun enterSearchMode() {
+        _isSearchMode.value = true
+    }
+
+    /**
+     * 검색 모드 종료
+     */
+    fun exitSearchMode() {
+        _isSearchMode.value = false
+        _searchQuery.value = ""
+        _searchResults.value = emptyList()
+        _searchState.value = UiState.Idle
+    }
+
+    /**
+     * 검색어 변경
+     */
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+        if (query.length >= 2) {
+            searchMessages(query)
+        } else {
+            _searchResults.value = emptyList()
+            _searchState.value = UiState.Idle
+        }
+    }
+
+    /**
+     * 메시지 검색
+     */
+    fun searchMessages(query: String) {
+        if (query.isBlank()) {
+            _searchResults.value = emptyList()
+            _searchState.value = UiState.Idle
+            return
+        }
+
+        screenModelScope.launch {
+            _searchState.value = UiState.Loading
+
+            messageRepository.searchMessages(roomId, query, page = 0, size = 50)
+                .onSuccess { result ->
+                    _searchResults.value = result.messages.sortedByDescending { it.createdAt }
+                    _searchState.value = UiState.Success(result.messages)
+                }
+                .onFailure { error ->
+                    _searchState.value = UiState.Error(error.message ?: "검색에 실패했습니다")
+                }
+        }
+    }
+
+    /**
+     * 검색 결과에서 메시지로 이동
+     */
+    fun scrollToMessage(messageId: String): Int {
+        return messages.value.indexOfFirst { it.id == messageId }
     }
 
     /**
